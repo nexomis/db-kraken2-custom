@@ -8,7 +8,7 @@ set -e
 
 function show_help() {
   cat << EOF
-Usage: $0 [options]
+Usage: $0 -o <out_db_dir> [options]
 
 Script to download genomic and transcriptomic sequences and build a Kraken2 database.
 
@@ -21,7 +21,7 @@ Reminder: at least one of the parameters between gnom_acc_id/gnom_acc_name and l
                          Valid values are: 'archaea', 'bacteria', 'plasmid', 'viral', 'human', 'fungi', 'plant', 'protozoa', 'nr', 'nt', 'UniVec', 'UniVec_Core'.
   -o, (out_db_dir)     : [recquired] - Directory where the Kraken2 database will be created.
                          Should not exist unless 'force' is set to true.
-  -f, (force)          : If set up, allows the script to proceed even if 'out_db_dir' already exists.
+  -f, (force)          : If set uto true, allows the script to proceed even if 'out_db_dir' already exists. Default 'false'
                          Be careful if 'out_db_dir' already exists and is not empty, because certain file types with the right path pattern
                         (e.g. custom fasta) will be included in the resulting database (this can be useful to resume incomplete excecution).
                         In addition, the contents of this directory can be overwritten or deleted. Default is false.
@@ -43,12 +43,14 @@ Other:
 
 
 Examples:
-  $0 -i "GCF_000001405.40" -n "GRCh38.p14" -o "kraken2DB_GRCh38" -t 8 -l "bacteria,plasmid" -a "--use-ftp"
+  $0 -i GCF_000001405.40 -n GRCh38.p14 -o kraken2DB_GRCh38 -t 8 -l bacteria,plasmid -a "--use-ftp"
     or
-  $0 -o "kraken2DB_human" -t 8 -l "human"
+  $0 -o kraken2DB_human -t 8 -l human
 EOF
   exit 1
 }
+
+echo -e "\n\n#[$(date)]: START\n\n"
 
 ######################
 ####  parse args  ####
@@ -64,7 +66,7 @@ while getopts ":i:n:o:f:l:t:a:b:c:d:x:h" opt; do
     i) gnom_acc_id="$OPTARG" ;;
     n) gnom_acc_name="$OPTARG" ;;
     o) out_db_dir="$OPTARG" ;;
-    f) force=true ;;
+    f) force="$OPTARG" ;;    # f) force=true ;;
     l) library="$OPTARG" ;;
     t) threads="$OPTARG" ;;
     a) args_dl_tax="$OPTARG" ;;
@@ -83,14 +85,22 @@ done
 #########################
 
 # recquired parameters
-if ( ( [[ -z ${gnom_acc_id} ]] || [[ -z ${gnom_acc_name} ]] ) && [[ -z ${library} ]] ) || [[ -z ${out_db_dir} ]]; then
-  echo "Error: If 'gnom_acc_id' and 'gnom_acc_name' are not specified, 'library' must be provided."
-  show_help
+if [[ -z ${out_db_dir} ]]; then
+  echo "Error: 'out_db_dir' must be provided."
+  exit 1
+fi
+
+if ( [[ -z ${gnom_acc_id} ]] || [[ -z ${gnom_acc_name} ]] ) && [[ -z ${library} ]]; then
+  echo "Warning: Normally, if 'library' is not defined, 'gnom_acc_id' AND 'gnom_acc_name' should be defined (or vice-versa). The only exception is if you wish to use the fasta initially present in 'out_db_dir'."
+  if [[ ${force} != true ]] || [[ ! -d ${out_db_dir} ]]; then
+    echo "Error: but this strategy requires you to activate '-f' and 'out_db_dir' to already exist"
+    exit 1
+  fi
 fi
 
 # Ensure out_db_dir does not exist unless force is true
 if [[ -d ${out_db_dir} ]] && [[ ${force} != true ]]; then
-  echo "Error: Output directory '${out_db_dir}' already exists. Use '--force' to override."
+  echo "Error: Output directory '${out_db_dir}' already exists. Possible to use '-f' option, see help message."
   exit 1
 fi
 
@@ -207,3 +217,5 @@ if ! kraken2-build --clean --db "${out_db_dir}/"; then
   echo "Error cleaning Kraken2 database."
   exit 1
 fi
+
+echo -e "\n\n#[$(date)]: END\n\n"
