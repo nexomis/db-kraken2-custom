@@ -137,12 +137,12 @@ for i in "${!gnom_acc_id_array[@]}"; do
   gnom_acc_name_i="${gnom_acc_name_array[$i]}"
 
   base_url="https://ftp.ncbi.nlm.nih.gov/genomes/all/${gnom_acc_id_i:0:3}/${gnom_acc_id_i:4:3}/${gnom_acc_id_i:7:3}/${gnom_acc_id_i:10:3}/${gnom_acc_id_i}_${gnom_acc_name_i}"
-  if ! wget -O "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
+  if ! wget -q -O "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
     "${base_url}/${gnom_acc_id_i}_${gnom_acc_name_i}_genomic.fna.gz"; then
     echo "Error downloading genome ${gnom_acc_name_i}.fna.gz"
     exit 1
   fi
-  if ! wget -O "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
+  if ! wget -q -O "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
     "${base_url}/${gnom_acc_id_i}_${gnom_acc_name_i}_rna_from_genomic.fna.gz"; then
     echo "Error downloading rna ${gnom_acc_name_i}.fna.gz"
     exit 1

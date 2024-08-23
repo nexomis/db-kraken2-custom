@@ -18,13 +18,15 @@ jobs:
           - ACC_ID: GCF_000001405.40
             ACC_NAME: GRCh38.p14
             LIBS: "bacteria,plasmid"
-            NAME: human_only
+            NAME: human_bact
             VERSION: 1.0.0
+            TAXID: 9606
           - ACC_ID: GCF_000001405.40
             ACC_NAME: GRCh38.p14
             LIBS: ""
-            NAME: human_bact
+            NAME: human_only
             VERSION: 1.0.0
+            TAXID: 9606
 
     steps:
       - name: Checkout code
@@ -33,12 +35,12 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get -y install --no-install-recommends wget gzip
+          apt-get -y install --no-install-recommends wget gzip rsync
 
       - name: Build and compress database
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         run: |
-          bash build_custom_db.sh -i ${{ matrix.ACC_ID }} -n ${{ matrix.ACC_NAME }} -l "${{ matrix.LIBS }}" -o ${{ matrix.NAME }} -t 4
+          bash build_custom_db.sh -i ${{ matrix.ACC_ID }} -j ${{ matrix.TAXID }} -n ${{ matrix.ACC_NAME }} -l "${{ matrix.LIBS }}" -o ${{ matrix.NAME }} -t 4
           tar xvzf ${{ matrix.NAME }}
 
       - name: Release database
