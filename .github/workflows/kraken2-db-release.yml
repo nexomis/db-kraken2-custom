@@ -31,24 +31,24 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build and compress database
-        if: github.event.release.tag_name == "v${VERSION}"
+        if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         run: |
-          bash build_custom_db.sh -i $ACC_ID -n $ACC_NAME -l "$LIBS" -o $NAME -t 4
-          tar xvzf NAME
+          bash build_custom_db.sh -i ${{ matrix.ACC_ID }} -n ${{ matrix.ACC_NAME }} -l "${{ matrix.LIBS }}" -o $${{ matrix.NAME }} -t 4
+          tar xvzf ${{ matrix.NAME }}
 
       - name: Release database
-        if: github.event.release.tag_name == "v${VERSION}"
+        if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         uses: actions/upload-artifact@v2
         with:
-          name: "${NAME}.tar.gz"
-          path: "${NAME}.tar.gz"
+          name: "${{ matrix.NAME }}.tar.gz"
+          path: "${{ matrix.NAME }}.tar.gz"
 
       - name: Create release
-        if: github.event.release.tag_name == "v${VERSION}"
+        if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         uses: actions/create-release@v1
         with:
-          tag_name: "v$VERSION"
-          release_name: "$NAME v$VERSION"
+          tag_name: "v${{ matrix.VERSION }}"
+          release_name: "${{ matrix.NAME }} v${{ matrix.VERSION }}"
           draft: false
           prerelease: false
-          body: "Release of $NAME database version $VERSION"
+          body: "Release of ${{ matrix.NAME }} database version ${{ matrix.VERSION }}"
