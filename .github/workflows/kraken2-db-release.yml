@@ -2,8 +2,6 @@ name: Kraken2 DB Release
 
 on:
     push:
-      branches:
-        - main
       tags:
         - 'v*'
 
