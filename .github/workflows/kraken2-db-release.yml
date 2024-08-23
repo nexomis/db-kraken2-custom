@@ -1,0 +1,54 @@
+name: Kraken2 DB Release
+
+on:
+    push:
+      branches:
+        - main
+      tags:
+        - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    container: quay.io/biocontainers/kraken2:2.1.3--pl5321hdcf5f25_1
+
+    strategy:
+      matrix:
+        include:
+          - ACC_ID: GCF_000001405.40
+            ACC_NAME: GRCh38.p14
+            LIBS: "bacteria,plasmid"
+            NAME: human_only
+            VERSION: 1.0.0
+          - ACC_ID: GCF_000001405.40
+            ACC_NAME: GRCh38.p14
+            LIBS: ""
+            NAME: human_bact
+            VERSION: 1.0.0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build and compress database
+        if: github.event.release.tag_name == "v${VERSION}"
+        run: |
+          bash build_custom_db.sh -i $ACC_ID -n $ACC_NAME -l "$LIBS" -o ${NAME}_${VERSION} -t 4
+          tar xvzf ${NAME}_${VERSION}
+
+      - name: Release database
+        if: github.event.release.tag_name == "v${VERSION}"
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${NAME}_${VERSION}.tar.gz
+          path: ${NAME}_${VERSION}.tar.gz
+
+      - name: Create release
+        if: github.event.release.tag_name == "v${VERSION}"
+        uses: actions/create-release@v1
+        with:
+          tag_name: v$VERSION
+          release_name: $NAME v$VERSION
+          draft: false
+          prerelease: false
+          body: "Release of $NAME database version $VERSION"
