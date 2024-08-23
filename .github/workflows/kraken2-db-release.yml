@@ -33,7 +33,7 @@ jobs:
       - name: Build and compress database
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         run: |
-          bash build_custom_db.sh -i ${{ matrix.ACC_ID }} -n ${{ matrix.ACC_NAME }} -l "${{ matrix.LIBS }}" -o $${{ matrix.NAME }} -t 4
+          bash build_custom_db.sh -i ${{ matrix.ACC_ID }} -n ${{ matrix.ACC_NAME }} -l "${{ matrix.LIBS }}" -o ${{ matrix.NAME }} -t 4
           tar xvzf ${{ matrix.NAME }}
 
       - name: Release database
