@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build and compress database
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
@@ -38,7 +38,7 @@ jobs:
 
       - name: Release database
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "${{ matrix.NAME }}.tar.gz"
           path: "${{ matrix.NAME }}.tar.gz"
