@@ -128,9 +128,6 @@ fi
 ########################
 ####  import fasta  ####
 ########################
-## download genomic and transcriptomic sequences:
-##   - *_genomic.fna.gz: top-level (exhaustive without unless redundancy) but repeatitive sequences are soft masked (if need to unmask: `awk '{if(/^[^>]/)$0=toupper($0);print $0}' genomic.fna > genomic.unmasked.fna`).
-##   - *_rna_from_genomic.fna.gz: no need to concatenate with *_rna.fna.gz as it must be included in rna_from_genomic.fna.gz ? (in addition '*_rna.fna.gz' seems to be specific to refSeq ftp (not in genbank ftp))
 
 ## Download and process sequences
 mkdir -p "${out_db_dir}/library/add_custom_tmp/"
@@ -165,12 +162,8 @@ done
 #########################
 ####  kraken2_build  ####
 #########################
-## potential interest kraken2-build option :
-##   --download-library/--download-taxonomy: maybe is better with "--use-ftp" (instead of rsync) 
-##   --add-to-library: maybe is better if default process is '--no-masking' (e.g: for classic virus this simplify dowstream assembly whithout risk to exclude viral reads at kraken host exclussion step and probably accelerade krakn index building).
-##   --build: maybe is better if default process is : '--fast-build' & '--skip-maps'
-##   --clean: what about "rm -rf ${out_db_dir}/taxonomy/ ${out_db_dir}/library/" ?
 
+## download-taxonomy
 if [[ -n "${taxonomy_db}" ]]; then
   if [[ -d "$taxonomy_db" ]]; then
     mkdir -p "${out_db_dir}"
@@ -188,6 +181,7 @@ else
   fi
 fi
 
+## download-library
 if [[ -n "$library" ]]; then
   for i in "${!library_array[@]}"; do
     library_i="${library_array[$i]}"
@@ -198,6 +192,7 @@ if [[ -n "$library" ]]; then
   done
 fi
 
+## add-to-library
 if [ -d "${out_db_dir}/library/add_custom_tmp/" ]; then
   find "${out_db_dir}/library/add_custom_tmp/" -type f \( -name "*.fa" -o -name "*.fna" -o -name "*.fasta" -o -name "*.fa.gz" -o -name "*.fna.gz" -o -name "*.fasta.gz" \) | while read -r fa_file; do
     if ! kraken2-build --db "${out_db_dir}/" --add-to-library "$fa_file" ${args_add_lib}; then
@@ -208,11 +203,14 @@ if [ -d "${out_db_dir}/library/add_custom_tmp/" ]; then
   rm -rf "${out_db_dir}/library/add_custom_tmp/"
 fi
 
+## build
 if ! kraken2-build --build --db "${out_db_dir}/" --threads "${threads}" ${args_build}; then
   echo "Error building Kraken2 database."
   exit 1
 fi
 
+## clean
+## what about "rm -rf ${out_db_dir}/taxonomy/ ${out_db_dir}/library/" ?
 if ! kraken2-build --clean --db "${out_db_dir}/"; then
   echo "Error cleaning Kraken2 database."
   exit 1
