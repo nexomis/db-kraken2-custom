@@ -30,6 +30,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get -y install --no-install-recommends wget gzip
+
       - name: Build and compress database
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         run: |
