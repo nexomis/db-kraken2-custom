@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+j#!/usr/bin/bash
 
 set -e
 
@@ -17,6 +17,10 @@ Reminder: at least one of the parameters between gnom_acc_id/gnom_acc_name and l
 
   -i, (gnom_acc_id)    : NCBI RefSeq or Genbank accession ID(s), separated by commas if multiple. E.g., "GCF_000001405.40"
   -n, (gnom_acc_name)  : Corresponding name(s) for the accession IDs, separated by commas if multiple. E.g., "GRCh38.p14"
+  -j, (taxid)          : Taxon id corresponding to element given in '-i' and '-n'.
+                         If specified '--download-taxonomy' step (from 'kraken2-build') is runned in light mode ('--skip-maps'),
+                         which avoids 40G of data to be stored and processed, of which several G are downloaded.
+                         Note: maybe '--skip-maps' is not compatible with library 'plasmid' or 'nr' (see kraken2 documentation) ?
   -l, (library)        : Kraken2 library IDs, separated by commas if multiple.
                          Valid values are: 'archaea', 'bacteria', 'plasmid', 'viral', 'human', 'fungi', 'plant', 'protozoa', 'nr', 'nt', 'UniVec', 'UniVec_Core'.
   -o, (out_db_dir)     : [recquired] - Directory where the Kraken2 database will be created.
@@ -26,7 +30,7 @@ Reminder: at least one of the parameters between gnom_acc_id/gnom_acc_name and l
                         (e.g. custom fasta) will be included in the resulting database (this can be useful to resume incomplete excecution).
                         In addition, the contents of this directory can be overwritten or deleted. Default is false.
   -x, (taxonomy_db)    : Directory of an existing Kraken2 taxonomy database to link to the new database.
-                         If specified '--download-taxonomy' step (from 'kraken2-build') is skipped.
+                         If specified '--download-taxonomy' step (from 'kraken2-build') is skipped (even if '-j' is specified !!).
 
 Kraken2-Build Arguments:
 to be incorporated as is into the command line concerned (to be provided between quotation)
@@ -61,10 +65,11 @@ force=false
 threads=6
 
 # Parse command-line options
-while getopts ":i:n:o:f:l:t:a:b:c:d:x:h" opt; do
+while getopts ":i:n:j:o:f:l:t:a:b:c:d:x:h" opt; do
   case $opt in
     i) gnom_acc_id="$OPTARG" ;;
     n) gnom_acc_name="$OPTARG" ;;
+    j) taxid="$OPTARG" ;;
     o) out_db_dir="$OPTARG" ;;
     f) force="$OPTARG" ;;    # f) force=true ;;
     l) library="$OPTARG" ;;
@@ -118,11 +123,20 @@ done
 ## Convert comma-separated lists to arrays
 IFS=',' read -r -a gnom_acc_id_array <<< "${gnom_acc_id}"
 IFS=',' read -r -a gnom_acc_name_array <<< "${gnom_acc_name}"
+IFS=',' read -r -a taxid_array <<< "${taxid}"
 
 ## Validate array lengths
 if [[ ${#gnom_acc_id_array[@]} -ne ${#gnom_acc_name_array[@]} ]]; then
   echo "Error: 'gnom_acc_id' and 'gnom_acc_name' must have the same number of elements."
   exit 1
+fi
+
+if [[ -n ${taxid} ]]; then
+  args_dl_tax+=" --skip-maps"
+  if [[ ${#taxid_array[@]} -ne ${#gnom_acc_id_array[@]} ]]; then
+    echo "Error: 'taxid' and 'gnom_acc_id' must have the same number of elements."
+    exit 1
+  fi
 fi
 
 ########################
@@ -148,11 +162,22 @@ for i in "${!gnom_acc_id_array[@]}"; do
     exit 1
   fi
 
-  if ! zcat "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
-    "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
-    > "${out_db_dir}/library/add_custom_tmp/${gnom_acc_name_i}.fa"; then
-    echo "Error concatenating files for ${gnom_acc_name_i}"
-    exit 1
+  if [[ -z ${taxid} ]]; then    
+    if ! zcat "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
+      "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
+      > "${out_db_dir}/library/add_custom_tmp/${gnom_acc_name_i}.fa"; then
+      echo "Error concatenating files for ${gnom_acc_name_i}"
+      exit 1
+    fi
+  else
+    taxid_i="${taxid_array[$i]}"
+    if ! zcat "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
+      "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
+      | sed -re "s/^>([^ ]*)(.*)$/>\1|kraken:taxid|${taxid_i}\2/" \
+      > "${out_db_dir}/library/add_custom_tmp/${gnom_acc_name_i}.fa"; then
+      echo "Error concatenating files for ${gnom_acc_name_i}"
+      exit 1
+    fi
   fi
 
   rm -rf "${out_db_dir}/library/add_custom_download_tmp/"
@@ -172,7 +197,7 @@ if [[ -n "${taxonomy_db}" ]]; then
       exit 1
     fi
   else
-    echo "Error 'taxonomy_db' ('$taxonomy_db') not directery."
+    echo "Error 'taxonomy_db' ('$taxonomy_db') not directory."
   fi
 else
   if ! kraken2-build --db "${out_db_dir}/" --threads "${threads}" --download-taxonomy ${args_dl_tax}; then
