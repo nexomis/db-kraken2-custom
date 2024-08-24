@@ -49,11 +49,18 @@ jobs:
           path: "${{ matrix.NAME }}.tar.gz"
 
       - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
         if: github.event.release.tag_name == "v${{ matrix.VERSION }}"
         uses: actions/create-release@v1
         with:
           tag_name: "v${{ matrix.VERSION }}"
           release_name: "${{ matrix.NAME }} v${{ matrix.VERSION }}"
+          body: |
+            Metadata of the release:
+            - ACCESSION ID: ${{ matrix.ACC_ID }}
+            - ACCESSION NAME: ${{ matrix.ACC_NAME }}
+            - LIBS: ${{ matrix.LIBS }}
+            - TAXID: ${{ matrix.TAXID }}
           draft: false
           prerelease: false
-          body: "Release of ${{ matrix.NAME }} database version ${{ matrix.VERSION }}"
