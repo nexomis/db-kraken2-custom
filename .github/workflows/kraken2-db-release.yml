@@ -61,11 +61,16 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            let stream = fs.createReadStream('${{ matrix.NAME }}.tar.gz')
             github.rest.repos.uploadReleaseAsset({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: '${{ steps.create_release.outputs.release_id }}',
               name: '${{ matrix.NAME }}.tar.gz',
-              data: fs.readFileSync('${{ matrix.NAME }}.tar.gz')
+              data: stream,
+              headers: {
+                "content-type": "application/gzip",
+                "content-length": fs.statSync('${{ matrix.NAME }}.tar.gz').size
+              }
             })
     
