@@ -74,21 +74,18 @@ async function uploadFile(bucketURL, filePath, accessToken) {
         data: stream,
     };
 
-    const response = await axios(requestConfig)
-      .then(function (response) {
+    try {
+        const response = await axios(requestConfig);
         return response.data;
-      })
-      .catch(function (error) {
+    } catch (error) {
+        // Handle error and return 'ERROR'
         try {
-          core.error(
-            `Error with zenodo upload: ${error.response.data.message}`,
-          );
+            console.error(`Error with Zenodo upload: ${error.response?.data?.message || error.message}`);
         } catch (e) {
-          //do nothing
+            console.error('An unknown error occurred.');
         }
         return 'ERROR';
-      });
-    return(response)
+    }
 }
 
 async function publishRecord(DepositionId, accessToken) {
@@ -114,11 +111,10 @@ async function main() {
     if (record !== 'ERROR') {
         const bucketUrl = record.links.bucket;
         const uploadedFile = await uploadFile(bucketUrl, argv.fileToUpload, argv.accessToken);
-        if (uploadedFile) {
+        if (uploadedFile !== 'ERROR') {
             await publishRecord(record.id, argv.accessToken)
         }
     }
 }
 
 main();
-		
