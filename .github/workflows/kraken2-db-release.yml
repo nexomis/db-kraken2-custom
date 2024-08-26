@@ -48,7 +48,7 @@ jobs:
           tar -cf - ${{ matrix.NAME }} | pigz -p4 > ${{ matrix.NAME }}.tar.gz
           rm -rf ${{ matrix.NAME }}
           ls -lh
-          npm install axios yargs fs mime-types form-data
+          npm install axios yargs fs mime-types form-data axios-retry
           node uploadToZenodo.js --recordName "Custom Kraken 2 database named ${{ matrix.NAME }}" --recordDescription 'acc_id:${{ matrix.ACC_ID }}, acc_name:${{ matrix.ACC_NAME }}, taxid:${{ matrix.TAXID }}, libs:${{ matrix.LIBS }}; see https://github.com/nexomis/db-kraken2-custom' --recordCreator "Nexomis" --fileToUpload ./${{ matrix.NAME }}.tar.gz --accessToken "${{ secrets.ZENODO_TOKEN }}" > url.txt
 
       # // need read and write permission for workflow https://github.com/{{owner}}/{{repo}}/settings/actions
