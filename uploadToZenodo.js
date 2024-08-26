@@ -1,6 +1,5 @@
 const axios = require('axios');
 const fs = require('fs');
-const FormData = require('form-data');
 const argv = require('yargs').argv;
 const path = require('path');
 const mime = require('mime-types');
@@ -45,16 +44,12 @@ async function uploadFile(bucketURL, filePath, accessToken) {
 
     const fileName = path.basename(filePath);
 
-    // Create a form
-    const form = new FormData();
-
     let contentType = mime.contentType(fileName)
       ? mime.contentType(fileName)
       : 'text/plain';
 
     // Read file as a stream
     const stream = fs.createReadStream(filePath);
-    form.append('file', stream);
 
     let contentLength = fs.statSync(filePath).size.toString();
 
