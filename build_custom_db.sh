@@ -103,6 +103,10 @@ if ( [[ -z ${gnom_acc_id} ]] || [[ -z ${gnom_acc_name} ]] ) && [[ -z ${library} 
   fi
 fi
 
+if ( [[ -z ${gnom_acc_id} ]] && [[ -z ${gnom_acc_name} ]] ); then 
+  args_dl_tax+=" --skip-maps"
+fi
+
 # Ensure out_db_dir does not exist unless force is true
 if [[ -d ${out_db_dir} ]] && [[ ${force} != true ]]; then
   echo "Error: Output directory '${out_db_dir}' already exists. Possible to use '-f' option, see help message."

@@ -67,3 +67,7 @@ Managable by argument in section `Kraken2-Build Arguments`
  - automatise option3:
    - cp input fasta path on good directories
    - add correspond taxid to all sequence name
+
+## With docker
+
+docker run -it -u $UID:$GID -v $PWD:$PWD -w $PWD quay.io/biocontainers/kraken2:2.1.3--pl5321hdcf5f25_1 bash build_custom_db.sh -o k2_bact_arch  -t 8 -l archaea,bacteria -f
