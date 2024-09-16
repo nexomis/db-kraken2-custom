@@ -171,16 +171,14 @@ if [ "$step" = "all" ] || [ "$step" = "pre" ]; then
     fi
 
     if [[ -z ${taxid} ]]; then    
-      if ! zcat "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
-        "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
+      if ! zcat ${out_db_dir}/library/add_custom_download_tmp/*_${gnom_acc_name_i}.fna.gz \
         > "${out_db_dir}/library/add_custom_tmp/${gnom_acc_name_i}.fa"; then
         echo "Error concatenating files for ${gnom_acc_name_i}"
         exit 1
       fi
     else
       taxid_i="${taxid_array[$i]}"
-      if ! zcat "${out_db_dir}/library/add_custom_download_tmp/genome_${gnom_acc_name_i}.fna.gz" \
-        "${out_db_dir}/library/add_custom_download_tmp/rna_${gnom_acc_name_i}.fna.gz" \
+      if ! zcat ${out_db_dir}/library/add_custom_download_tmp/*_${gnom_acc_name_i}.fna.gz \
         | sed -re "s/^>([^ ]*)(.*)$/>\1|kraken:taxid|${taxid_i}\2/" \
         > "${out_db_dir}/library/add_custom_tmp/${gnom_acc_name_i}.fa"; then
         echo "Error concatenating files for ${gnom_acc_name_i}"
